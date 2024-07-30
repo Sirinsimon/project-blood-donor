@@ -8,6 +8,11 @@ document.getElementById('donorForm').addEventListener('submit', function(e) {
     let gistId = document.getElementById('gistId').value;
     let token = document.getElementById('token').value;
 
+    if (!name || !bloodGroup || !contact || !address || !gistId || !token) {
+        alert('Please fill out all fields.');
+        return;
+    }
+
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
     let newDonor = { name, bloodGroup, contact, address };
     donors.push(newDonor);
@@ -51,7 +56,7 @@ function createTable(bloodGroup) {
 function addRowToTable(tableBody, donor, index) {
     let newRow = tableBody.insertRow();
     newRow.setAttribute('data-index', index);
-    
+
     newRow.insertCell(0).innerText = donor.name;
     newRow.insertCell(1).innerText = donor.bloodGroup;
     newRow.insertCell(2).innerText = donor.contact;
@@ -60,7 +65,7 @@ function addRowToTable(tableBody, donor, index) {
     let deleteButton = document.createElement('button');
     deleteButton.innerText = 'Delete';
     deleteButton.onclick = function() {
-        deleteDonor(index, donor.gistId, donor.token);
+        deleteDonor(index, gistId, token);
     };
     actionsCell.appendChild(deleteButton);
 }
@@ -97,6 +102,8 @@ function deleteDonor(index, gistId, token) {
 }
 
 function saveToGist(donors, gistId, token) {
+    console.log('Saving to Gist:', donors, gistId, token);
+
     fetch(https://api.github.com/gists/${gistId}, {
         method: 'PATCH',
         headers: {
@@ -112,8 +119,9 @@ function saveToGist(donors, gistId, token) {
         })
     })
     .then(response => {
+        console.log('Gist save response:', response);
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            return response.json().then(err => Promise.reject(err));
         }
         return response.json();
     })
@@ -122,20 +130,26 @@ function saveToGist(donors, gistId, token) {
     })
     .catch(error => {
         console.error('Error updating Gist:', error);
+        alert('Failed to save to Gist. Check the console for more details.');
     });
 }
 
 window.onload = function() {
     let gistId = prompt('Enter GitHub Gist ID:');
     let token = prompt('Enter GitHub Access Token:');
+    if (!gistId || !token) {
+        alert('GitHub Gist ID and Access Token are required.');
+        return;
+    }
     fetch(https://api.github.com/gists/${gistId}, {
         headers: {
             'Authorization': token ${token}
         }
     })
     .then(response => {
+        console.log('Gist fetch response:', response);
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            return response.json().then(err => Promise.reject(err));
         }
         return response.json();
     })
@@ -146,5 +160,6 @@ window.onload = function() {
     })
     .catch(error => {
         console.error('Error fetching Gist:', error);
+        alert('Failed to fetch Gist. Check the console for more details.');
     });
 };
