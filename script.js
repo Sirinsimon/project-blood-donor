@@ -111,7 +111,12 @@ function saveToGist(donors, gistId, token) {
             }
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         console.log('Gist updated:', data);
     })
@@ -128,7 +133,12 @@ window.onload = function() {
             'Authorization': token ${token}
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         let donors = JSON.parse(data.files['donors.json'].content);
         localStorage.setItem('donors', JSON.stringify(donors));
