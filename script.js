@@ -5,13 +5,6 @@ document.getElementById('donorForm').addEventListener('submit', function(e) {
     let bloodGroup = document.getElementById('bloodGroup').value;
     let contact = document.getElementById('contact').value;
     let address = document.getElementById('address').value;
-    let gistId = document.getElementById('gistId').value;
-    let token = document.getElementById('token').value;
-
-    if (!name || !bloodGroup || !contact || !address || !gistId || !token) {
-        alert('Please fill out all fields.');
-        return;
-    }
 
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
     let newDonor = { name, bloodGroup, contact, address };
@@ -19,7 +12,6 @@ document.getElementById('donorForm').addEventListener('submit', function(e) {
     localStorage.setItem('donors', JSON.stringify(donors));
 
     updateTables(donors);
-    saveToGist(donors, gistId, token);
     document.getElementById('donorForm').reset();
 });
 
@@ -56,7 +48,7 @@ function createTable(bloodGroup) {
 function addRowToTable(tableBody, donor, index) {
     let newRow = tableBody.insertRow();
     newRow.setAttribute('data-index', index);
-
+    
     newRow.insertCell(0).innerText = donor.name;
     newRow.insertCell(1).innerText = donor.bloodGroup;
     newRow.insertCell(2).innerText = donor.contact;
@@ -65,7 +57,7 @@ function addRowToTable(tableBody, donor, index) {
     let deleteButton = document.createElement('button');
     deleteButton.innerText = 'Delete';
     deleteButton.onclick = function() {
-        deleteDonor(index, gistId, token);
+        deleteDonor(index);
     };
     actionsCell.appendChild(deleteButton);
 }
@@ -92,74 +84,15 @@ function updateTables(donors) {
     }
 }
 
-function deleteDonor(index, gistId, token) {
+function deleteDonor(index) {
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
     donors.splice(index, 1);
     localStorage.setItem('donors', JSON.stringify(donors));
 
     updateTables(donors);
-    saveToGist(donors, gistId, token);
-}
-
-function saveToGist(donors, gistId, token) {
-    console.log('Saving to Gist:', donors, gistId, token);
-
-    fetch(https://api.github.com/gists/${gistId}, {
-        method: 'PATCH',
-        headers: {
-            'Authorization': token ${token},
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            files: {
-                'donors.json': {
-                    content: JSON.stringify(donors, null, 2)
-                }
-            }
-        })
-    })
-    .then(response => {
-        console.log('Gist save response:', response);
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Gist updated:', data);
-    })
-    .catch(error => {
-        console.error('Error updating Gist:', error);
-        alert('Failed to save to Gist. Check the console for more details.');
-    });
 }
 
 window.onload = function() {
-    let gistId = prompt('Enter GitHub Gist ID:');
-    let token = prompt('Enter GitHub Access Token:');
-    if (!gistId || !token) {
-        alert('GitHub Gist ID and Access Token are required.');
-        return;
-    }
-    fetch(https://api.github.com/gists/${gistId}, {
-        headers: {
-            'Authorization': token ${token}
-        }
-    })
-    .then(response => {
-        console.log('Gist fetch response:', response);
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
-    .then(data => {
-        let donors = JSON.parse(data.files['donors.json'].content);
-        localStorage.setItem('donors', JSON.stringify(donors));
-        updateTables(donors);
-    })
-    .catch(error => {
-        console.error('Error fetching Gist:', error);
-        alert('Failed to fetch Gist. Check the console for more details.');
-    });
+    let donors = JSON.parse(localStorage.getItem('donors')) || [];
+    updateTables(donors);
 };
