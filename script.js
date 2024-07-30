@@ -5,6 +5,8 @@ document.getElementById('donorForm').addEventListener('submit', function(e) {
     let bloodGroup = document.getElementById('bloodGroup').value;
     let contact = document.getElementById('contact').value;
     let address = document.getElementById('address').value;
+    let gistId = document.getElementById('gistId').value;
+    let token = document.getElementById('token').value;
 
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
     let newDonor = { name, bloodGroup, contact, address };
@@ -12,6 +14,7 @@ document.getElementById('donorForm').addEventListener('submit', function(e) {
     localStorage.setItem('donors', JSON.stringify(donors));
 
     updateTables(donors);
+    saveToGist(donors, gistId, token);
     document.getElementById('donorForm').reset();
 });
 
@@ -57,7 +60,7 @@ function addRowToTable(tableBody, donor, index) {
     let deleteButton = document.createElement('button');
     deleteButton.innerText = 'Delete';
     deleteButton.onclick = function() {
-        deleteDonor(index);
+        deleteDonor(index, donor.gistId, donor.token);
     };
     actionsCell.appendChild(deleteButton);
 }
@@ -84,15 +87,54 @@ function updateTables(donors) {
     }
 }
 
-function deleteDonor(index) {
+function deleteDonor(index, gistId, token) {
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
     donors.splice(index, 1);
     localStorage.setItem('donors', JSON.stringify(donors));
 
     updateTables(donors);
+    saveToGist(donors, gistId, token);
+}
+
+function saveToGist(donors, gistId, token) {
+    fetch(https://api.github.com/gists/${gistId}, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': token ${token},
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            files: {
+                'donors.json': {
+                    content: JSON.stringify(donors, null, 2)
+                }
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Gist updated:', data);
+    })
+    .catch(error => {
+        console.error('Error updating Gist:', error);
+    });
 }
 
 window.onload = function() {
-    let donors = JSON.parse(localStorage.getItem('donors')) || [];
-    updateTables(donors);
+    let gistId = prompt('Enter GitHub Gist ID:');
+    let token = prompt('Enter GitHub Access Token:');
+    fetch(https://api.github.com/gists/${gistId}, {
+        headers: {
+            'Authorization': token ${token}
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        let donors = JSON.parse(data.files['donors.json'].content);
+        localStorage.setItem('donors', JSON.stringify(donors));
+        updateTables(donors);
+    })
+    .catch(error => {
+        console.error('Error fetching Gist:', error);
+    });
 };
