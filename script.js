@@ -11,7 +11,7 @@ document.getElementById('donorForm').addEventListener('submit', function(e) {
     donors.push(newDonor);
     localStorage.setItem('donors', JSON.stringify(donors));
 
-    addRowToTable(newDonor, donors.length - 1);
+    updateTables(donors);
     document.getElementById('donorForm').reset();
 });
 
@@ -19,9 +19,34 @@ document.getElementById('clearButton').addEventListener('click', function() {
     document.getElementById('donorForm').reset();
 });
 
-function addRowToTable(donor, index) {
-    let table = document.getElementById('donorTable').getElementsByTagName('tbody')[0];
-    let newRow = table.insertRow();
+function createTable(bloodGroup) {
+    let tableContainer = document.createElement('div');
+    tableContainer.className = 'tableContainer';
+
+    let table = document.createElement('table');
+    let thead = document.createElement('thead');
+    let tbody = document.createElement('tbody');
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+
+    let headerRow = document.createElement('tr');
+    headerRow.innerHTML = `
+        <th>Name</th>
+        <th>Blood Group</th>
+        <th>Contact Number</th>
+        <th>Address</th>
+        <th>Actions</th>
+    `;
+    thead.appendChild(headerRow);
+
+    tableContainer.appendChild(table);
+
+    return { tableContainer, tbody };
+}
+
+function addRowToTable(tableBody, donor, index) {
+    let newRow = tableBody.insertRow();
     newRow.setAttribute('data-index', index);
     
     newRow.insertCell(0).innerText = donor.name;
@@ -37,17 +62,37 @@ function addRowToTable(donor, index) {
     actionsCell.appendChild(deleteButton);
 }
 
+function updateTables(donors) {
+    let tablesContainer = document.getElementById('tablesContainer');
+    tablesContainer.innerHTML = ''; // Clear existing tables
+
+    let groupedDonors = donors.reduce((groups, donor, index) => {
+        if (!groups[donor.bloodGroup]) {
+            groups[donor.bloodGroup] = { tableBody: null, index: [] };
+        }
+        if (!groups[donor.bloodGroup].tableBody) {
+            let { tableContainer, tbody } = createTable(donor.bloodGroup);
+            tablesContainer.appendChild(tableContainer);
+            groups[donor.bloodGroup].tableBody = tbody;
+        }
+        groups[donor.bloodGroup].index.push(index);
+        return groups;
+    }, {});
+
+    for (const [bloodGroup, { tableBody, index }] of Object.entries(groupedDonors)) {
+        index.forEach(idx => addRowToTable(tableBody, donors[idx], idx));
+    }
+}
+
 function deleteDonor(index) {
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
     donors.splice(index, 1);
     localStorage.setItem('donors', JSON.stringify(donors));
 
-    let table = document.getElementById('donorTable').getElementsByTagName('tbody')[0];
-    table.innerHTML = '';
-    donors.forEach((donor, index) => addRowToTable(donor, index));
+    updateTables(donors);
 }
 
 window.onload = function() {
     let donors = JSON.parse(localStorage.getItem('donors')) || [];
-    donors.forEach((donor, index) => addRowToTable(donor, index));
+    updateTables(donors);
 };
